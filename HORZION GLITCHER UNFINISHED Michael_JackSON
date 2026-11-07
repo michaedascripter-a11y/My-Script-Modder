@@ -1,0 +1,517 @@
+--[ This Script Was Made By Michael_JackSON]--
+
+--FIRST SWORD SETTING--
+local Players = game:GetService("Players")
+local TextChatService = game:GetService("TextChatService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local KEY = Enum.KeyCode.G
+local MESSAGE = "-gh 5316479641"
+local SPIN_TIME = 1 -- seconds for the full spin
+
+local busy = false
+
+local function sendChat(text)
+	if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+		local channel = TextChatService:FindFirstChild("TextChannels")
+			and TextChatService.TextChannels:FindFirstChild("RBXGeneral")
+		if channel then
+			channel:SendAsync(text)
+		end
+	else
+		-- Legacy chat fallback
+		local events = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
+		local say = events and events:FindFirstChild("SayMessageRequest")
+		if say then
+			say:FireServer(text, "All")
+		end
+	end
+end
+
+local function spin360()
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+
+	-- Tweening a number instead of the CFrame, because tweening
+	-- straight to a 360° turn would look like no movement at all
+	local angle = Instance.new("NumberValue")
+	local startCFrame = root.CFrame
+
+	local connection = angle.Changed:Connect(function(value)
+		root.CFrame = CFrame.new(root.Position) * (startCFrame - startCFrame.Position)
+			* CFrame.Angles(0, math.rad(value), 0)
+	end)
+
+	local tween = TweenService:Create(angle, TweenInfo.new(SPIN_TIME, Enum.EasingStyle.Linear), {Value = 360})
+	tween:Play()
+	tween.Completed:Wait()
+
+	connection:Disconnect()
+	angle:Destroy()
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed or input.KeyCode ~= KEY or busy then return end
+	busy = true
+
+	sendChat(MESSAGE)
+	spin360()
+
+	busy = false
+end)
+----- TITLE SETTING (MAYHEM) -----
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+
+local TITLE_TEXT = "Mayhem"
+local TITLE_FONT = Enum.Font.Creepster -- try: Bangers, LuckiestGuy, FredokaOne, PermanentMarker
+local TITLE_COLOR = Color3.fromRGB(255, 60, 60)
+local OUTLINE_COLOR = Color3.fromRGB(0, 0, 0)
+
+local function addTitle(character)
+	local head = character:WaitForChild("Head", 5)
+	if not head then return end
+
+	-- Remove any old title so it never stacks
+	local old = head:FindFirstChild("MayhemTitle")
+	if old then old:Destroy() end
+
+	local gui = Instance.new("BillboardGui")
+	gui.Name = "MayhemTitle"
+	gui.Size = UDim2.new(0, 220, 0, 60)
+	gui.StudioOffset = Vector3.new(0, 2.2, 0)
+	gui.AlwaysOnTop = false
+	gui.MaxDistance = 100
+	gui.Adornee = head
+	gui.Parent = head
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.fromScale(1, 1)
+	label.BackgroundTransparency = 1
+	label.Text = TITLE_TEXT
+	label.Font = TITLE_FONT
+	label.TextScaled = true
+	label.TextColor3 = TITLE_COLOR
+	label.Parent = gui
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = OUTLINE_COLOR
+	stroke.Thickness = 2.5
+	stroke.Parent = label
+
+	-- Color gradient for the "cool" look
+	local gradient = Instance.new("UIGradient")
+	gradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 60, 60)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 170, 0)),
+	})
+	gradient.Rotation = 90
+	gradient.Parent = label
+
+	-- Wobble: rocks left and right forever
+	label.Rotation = -8
+	local wobble = TweenService:Create(
+		label,
+		TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+		{Rotation = 8}
+	)
+	wobble:Play()
+
+	-- Gentle bob up and down
+	local bob = TweenService:Create(
+		gui,
+		TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+		{StudioOffset = Vector3.new(0, 2.6, 0)}
+	)
+	bob:Play()
+end
+
+Players.PlayerAdded:Connect(function(player)
+	player.CharacterAdded:Connect(addTitle)
+end)
+
+-- In case players joined before the script loaded
+for _, player in ipairs(Players:GetPlayers()) do
+	if player.Character then
+		addTitle(player.Character)
+	end
+	player.CharacterAdded:Connect(addTitle)
+end
+
+inspired By Michael_JackSON
+DO NOT CHAGE ANYTHING IF YOUR NOT A EDITOR!
+
+-- SECOND SWORD SETTING --
+local Players = game:GetService("Players")
+local TextChatService = game:GetService("TextChatService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local KEY = Enum.KeyCode.H
+local MESSAGE = "-gh 5268602207"
+
+local HEIGHT = 4        -- how high you float (studs)
+local RISE_TIME = 0.6   -- seconds to lift and turn sideways
+local ROCK_ANGLE = 35   -- how far you tilt down and up (degrees)
+local ROCK_SPEED = 2.5  -- how fast you rock
+
+local floating = false
+local connection
+local baseCFrame
+
+local function sendChat(text)
+	if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+		local channels = TextChatService:FindFirstChild("TextChannels")
+		local channel = channels and channels:FindFirstChild("RBXGeneral")
+		if channel then
+			channel:SendAsync(text)
+		end
+	else
+		local events = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
+		local say = events and events:FindFirstChild("SayMessageRequest")
+		if say then
+			say:FireServer(text, "All")
+		end
+	end
+end
+
+local function getParts()
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	return root, humanoid
+end
+
+local function stopFloating()
+	if connection then
+		connection:Disconnect()
+		connection = nil
+	end
+	floating = false
+
+	local root, humanoid = getParts()
+	if root and humanoid then
+		root.CFrame = baseCFrame -- back to standing upright
+		root.AssemblyLinearVelocity = Vector3.zero
+		root.AssemblyAngularVelocity = Vector3.zero
+		root.Anchored = false
+		humanoid.PlatformStand = false
+	end
+end
+
+local function startFloating()
+	local root, humanoid = getParts()
+	if not root or not humanoid then return end
+
+	floating = true
+	sendChat(MESSAGE)
+
+	-- Keep only your position and facing direction (no tilt)
+	local _, yawAngle = root.CFrame:ToOrientation()
+	baseCFrame = CFrame.new(root.Position) * CFrame.Angles(0, yawAngle, 0)
+
+	humanoid.PlatformStand = true
+	root.Anchored = true
+
+	local startTime = os.clock()
+	connection = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - startTime
+		local ease = math.clamp(t / RISE_TIME, 0, 1)
+
+		local roll = math.rad(90) * ease
+			+ math.rad(ROCK_ANGLE) * math.sin(t * ROCK_SPEED) * ease
+
+		root.CFrame = baseCFrame
+			* CFrame.new(0, HEIGHT * ease, 0)
+			* CFrame.Angles(0, 0, roll)
+	end)
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed or input.KeyCode ~= KEY then return end
+
+	if floating then
+		stopFloating()
+	else
+		startFloating()
+	end
+end)
+
+-- Reset if you respawn while floating
+player.CharacterAdded:Connect(function()
+	if connection then
+		connection:Disconnect()
+		connection = nil
+	end
+	floating = false
+end)
+-- THIRD SWORD SETTING --
+local Players = game:GetService("Players")
+local TextChatService = game:GetService("TextChatService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local KEY = Enum.KeyCode.J
+local MESSAGE = "-gh 5316539421"
+
+local SIDE = 1            -- 1 = right side, -1 = left side
+local SHOULDER = Vector3.new(1.5, 1, 0.8) -- where the wing "hinge" sits on you
+local ARM_LENGTH = 3.5    -- how far the sword sits from the hinge
+local FLAP_ANGLE = 40     -- degrees up and down
+local FLAP_SPEED = 4      -- flaps speed
+local WAIT_FOR_ITEM = 4   -- seconds to wait for the sword to appear
+
+local floater
+local connection
+
+local function sendChat(text)
+	if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+		local channels = TextChatService:FindFirstChild("TextChannels")
+		local channel = channels and channels:FindFirstChild("RBXGeneral")
+		if channel then
+			channel:SendAsync(text)
+		end
+	else
+		local events = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
+		local say = events and events:FindFirstChild("SayMessageRequest")
+		if say then
+			say:FireServer(text, "All")
+		end
+	end
+end
+
+-- Remember what you already own so we can spot the new sword
+local function snapshot()
+	local seen = {}
+	local character = player.Character
+	local backpack = player:FindFirstChildOfClass("Backpack")
+	for _, container in ipairs({character, backpack}) do
+		if container then
+			for _, child in ipairs(container:GetChildren()) do
+				seen[child] = true
+			end
+		end
+	end
+	return seen
+end
+
+local function findNewHandle(seen)
+	local character = player.Character
+	local backpack = player:FindFirstChildOfClass("Backpack")
+	for _, container in ipairs({character, backpack}) do
+		if container then
+			for _, child in ipairs(container:GetChildren()) do
+				if not seen[child] and (child:IsA("Tool") or child:IsA("Accessory")) then
+					local handle = child:FindFirstChild("Handle")
+					if handle and handle:IsA("BasePart") then
+						return handle
+					end
+				end
+			end
+		end
+	end
+end
+
+local function cleanup()
+	if connection then
+		connection:Disconnect()
+		connection = nil
+	end
+	if floater then
+		floater:Destroy()
+		floater = nil
+	end
+end
+
+local function startFloating(handle)
+	cleanup()
+
+	floater = handle:Clone()
+	for _, d in ipairs(floater:GetDescendants()) do
+		if d:IsA("Script") or d:IsA("LocalScript") or d:IsA("JointInstance")
+			or d:IsA("WeldConstraint") or d:IsA("TouchTransmitter") then
+			d:Destroy()
+		end
+	end
+	floater.Anchored = true
+	floater.CanCollide = false
+	floater.CanTouch = false
+	floater.Massless = true
+	floater.Parent = workspace
+
+	local startTime = os.clock()
+	connection = RunService.RenderStepped:Connect(function()
+		local character = player.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart")
+		if not root then return end
+
+		local t = os.clock() - startTime
+		local flap = math.rad(FLAP_ANGLE) * math.sin(t * FLAP_SPEED)
+
+		floater.CFrame = root.CFrame
+			* CFrame.new(SHOULDER.X * SIDE, SHOULDER.Y, SHOULDER.Z)
+			* CFrame.Angles(0, 0, flap * SIDE)          -- the wing flap
+			* CFrame.new(ARM_LENGTH * SIDE, 0, 0)        -- sword out to the side
+			* CFrame.Angles(0, 0, math.rad(90))          -- lying on its side
+	end)
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed or input.KeyCode ~= KEY then return end
+
+	-- Press again to turn it off
+	if floater then
+		cleanup()
+		return
+	end
+
+	local seen = snapshot()
+	sendChat(MESSAGE)
+
+	local deadline = os.clock() + WAIT_FOR_ITEM
+	local handle
+	while os.clock() < deadline do
+		handle = findNewHandle(seen)
+		if handle then break end
+		task.wait(0.2)
+	end
+
+	if handle then
+		startFloating(handle)
+	else
+		warn("No new sword showed up after the chat command.")
+	end
+end)
+
+player.CharacterAdded:Connect(cleanup)
+--REANIMATE--
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Jskfhggjxu/My-Script/refs/heads/main/Cool-Reanimate.lua"))()
+-- ANIMATION SETTING  --
+local RunService = game:GetService("RunService")
+
+local character = script.Parent
+local humanoid = character:WaitForChild("Humanoid")
+local torso = character:WaitForChild("Torso")
+local root = character:WaitForChild("HumanoidRootPart")
+
+local HEIGHT = 3        -- how high you float (studs)
+local BOB_AMOUNT = 0.4  -- how much you move up and down
+local BOB_SPEED = 2
+local SWAY = 12         -- limb sway in degrees
+
+-- Stop the default walking animation from fighting this one
+local animate = character:FindFirstChild("Animate")
+if animate then animate.Disabled = true end
+for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
+	track:Stop()
+end
+
+local rightShoulder = torso:WaitForChild("Right Shoulder")
+local leftShoulder = torso:WaitForChild("Left Shoulder")
+local rightHip = torso:WaitForChild("Right Hip")
+local leftHip = torso:WaitForChild("Left Hip")
+local neck = torso:WaitForChild("Neck")
+local rootJoint = root:WaitForChild("RootJoint")
+
+local base = {
+	[rightShoulder] = rightShoulder.C0,
+	[leftShoulder] = leftShoulder.C0,
+	[rightHip] = rightHip.C0,
+	[leftHip] = leftHip.C0,
+	[neck] = neck.C0,
+	[rootJoint] = rootJoint.C0,
+}
+
+local startTime = os.clock()
+
+RunService.RenderStepped:Connect(function()
+	if humanoid.Health <= 0 then return end
+
+	local t = os.clock() - startTime
+	local wave = math.sin(t * BOB_SPEED)
+	local slow = math.sin(t * BOB_SPEED * 0.5)
+
+	-- Float and bob
+	humanoid.HipHeight = HEIGHT + wave * BOB_AMOUNT
+
+	-- Arms drift outward and sway
+	rightShoulder.C0 = base[rightShoulder] * CFrame.Angles(0, 0, math.rad(25 + wave * SWAY))
+	leftShoulder.C0 = base[leftShoulder] * CFrame.Angles(0, 0, math.rad(-25 - wave * SWAY))
+
+	-- Legs dangle and swing a little
+	rightHip.C0 = base[rightHip] * CFrame.Angles(0, 0, math.rad(wave * SWAY * 0.6))
+	leftHip.C0 = base[leftHip] * CFrame.Angles(0, 0, math.rad(wave * SWAY * 0.6))
+
+	-- Slight body lean and head tilt
+	rootJoint.C0 = base[rootJoint] * CFrame.Angles(math.rad(slow * 4), 0, math.rad(slow * 3))
+	neck.C0 = base[neck] * CFrame.Angles(math.rad(-slow * 3), 0, 0)
+end)
+-- GUI STUFF --
+local basgui = it("GuiMain")
+basgui.Parent = plr.PlayerGui
+basgui.Name = "VISgui"
+local fullscreenz = it("Frame")
+fullscreenz.Parent = basgui
+fullscreenz.BackgroundColor3 = Color3.new(255, 255, 255)
+fullscreenz.BackgroundTransparency = 1
+fullscreenz.BorderColor3 = Color3.new(17, 17, 17)
+fullscreenz.Size = UDim2.new(1, 0, 1, 0)
+fullscreenz.Position = UDim2.new(0, 0, 0, 0)
+local imgl2 = Instance.new("ImageLabel",fullscreenz)
+imgl2.BackgroundTransparency = 1
+imgl2.BorderSizePixel = 0
+imgl2.ImageTransparency = 0.5
+imgl2.ImageColor3 = Color3.new(1,0,0)
+imgl2.Position = UDim2.new(0.75,0,0.55,0)
+imgl2.Size = UDim2.new(0,600,0,600)
+imgl2.Image = "rbxassetid://320731120"
+local techc = imgl2:Clone()
+techc.Parent = fullscreenz
+techc.ImageTransparency = 0.5
+techc.Size = UDim2.new(0,700,0,700)
+techc.Position = UDim2.new(0.75,-50,0.55,-50)
+techc.ImageColor3 = Color3.new(0.5,0,1)
+techc.Image = "rbxassetid://521073910"
+local circl = imgl2:Clone()
+circl.Parent = fullscreenz
+circl.ImageTransparency = 0
+circl.Size = UDim2.new(0,500,0,500)
+circl.Position = UDim2.new(0.75,50,0.55,50)
+circl.ImageColor3 = Color3.new(0,0.5,1)
+circl.Image = "rbxassetid://997291547"
+local circl2 = imgl2:Clone()
+circl2.Parent = fullscreenz
+circl2.ImageTransparency = 0
+circl2.ImageColor3 = Color3.new(0.5,0,1)
+circl2.Image = "rbxassetid://997291547"
+local imgl2b = imgl2:Clone()
+imgl2b.Parent = fullscreenz
+imgl2b.ImageTransparency = 0
+imgl2b.Size = UDim2.new(0,500,0,500)
+imgl2b.Position = UDim2.new(0.75,50,0.55,50)
+local ned = Instance.new("TextLabel",fullscreenz)
+ned.ZIndex = 2
+ned.Font = "SciFi"
+ned.BackgroundTransparency = 1
+ned.BorderSizePixel = 0.65
+ned.Size = UDim2.new(0.4,0,0.2,0)
+ned.Position = UDim2.new(0.6,0,0.8,0)
+ned.TextColor3 = BrickColor.new("Royal purple").Color
+ned.TextStrokeColor3 = BrickColor.new("Cyan").Color
+ned.TextScaled = true
+ned.TextStrokeTransparency = 0
+ned.Text = "Michael_JackSON"
+ned.TextSize = 24
+ned.Rotation = 1
+--ned.TextXAlignment = "Right"
+ned.TextYAlignment = "Bottom"
+
+To Be Continue...
